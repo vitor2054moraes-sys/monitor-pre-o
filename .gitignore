@@ -1,0 +1,10 @@
+# Segredos e dados pessoais
+.env
+.garimpo.json
+.garimpo.json.tmp
+
+# Gerados
+node_modules/
+dist/
+__pycache__/
+*.pyc
