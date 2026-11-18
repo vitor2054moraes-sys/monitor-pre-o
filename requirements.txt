@@ -1,0 +1,2 @@
+# Versão de terminal (monitor_preco.py). A 2.10 é a primeira com o modelo e a busca usados aqui.
+anthropic>=2.10.0,<3

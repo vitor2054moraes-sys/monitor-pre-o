@@ -1,130 +1,89 @@
-# 🛒 Monitor de Preços
+# Garimpo — comparador de preços com chat de IA
 
-Comparador de preços inteligente com chat IA para **8 lojas brasileiras** — disponível em versão web (React) e terminal (Python).
+**Garimpo** (antes "Monitor de Preços") procura o preço de um produto em **8 lojas brasileiras** conversando com o
+Claude, que pesquisa na internet. O nome vem de "garimpar": procurar com calma até achar o melhor preço.
+Tem duas versões: **com tela** (React) e **de terminal** (Python).
 
-## ✨ Funcionalidades
+**Lojas:** Mercado Livre · Amazon Brasil · Magazine Luiza · Americanas · Shopee · Casas Bahia · Kabum · AliExpress
 
-| Feature | Web | Terminal |
+| O que faz | Tela | Terminal |
 |---|:---:|:---:|
-| Chat com IA (pede detalhes se necessário) | ✅ | ✅ |
-| Busca em 8 lojas simultâneas | ✅ | ✅ |
-| Filtro por loja e frete grátis | ✅ | — |
-| Favoritos (até 5 itens) | ✅ | ✅ |
-| Histórico de buscas | ✅ | ✅ |
-| Alertas de queda de preço | ✅ (UI) | ✅ (e-mail real) |
-| Gráfico de variação de preço | ✅ | — |
-| 3 temas: Dark / Light / Noturno | ✅ | — |
+| Chat com IA (pergunta o que falta antes de pesquisar) | ✅ | ✅ |
+| Preços nas 8 lojas, do menor para o maior, com a economia | ✅ | ✅ |
+| Filtro por loja e "só frete grátis" | ✅ | — |
+| Comparação em barras e preços das suas buscas anteriores | ✅ | — |
+| Favoritos (até 5), histórico (20) e alertas — guardados | ✅ | ✅ |
+| Aviso quando o preço chega no alvo | na tela | no terminal e por e-mail |
+| Temas Escuro, Claro e Noturno | ✅ | — |
 
-**Lojas monitoradas:** Mercado Livre · Amazon Brasil · Magazine Luiza · Americanas · Shopee · Casas Bahia · Kabum · AliExpress
+## Versão com tela (`MonitorPreco.jsx`)
 
----
+Foi feita para rodar como **artefato no Claude.ai**: cole o arquivo numa conversa e peça para abrir como artefato.
+Lá a pesquisa funciona sem chave no código.
 
-## 🚀 Versão Web (React)
+> Fora do Claude.ai, **não** coloque a chave da API no navegador: qualquer pessoa que abrir a página consegue lê-la.
+> Para usar no seu computador, prefira a versão de terminal.
 
-### Pré-requisitos
-- Node.js 18+
-- Chave da API Anthropic
-
-### Setup
+## Versão de terminal (`monitor_preco.py`)
 
 ```bash
-npm create vite@latest monitor-preco -- --template react
-cd monitor-preco
-npm install recharts
-```
-
-Substitua o conteúdo de `src/App.jsx` pelo arquivo `MonitorPreco.jsx`.
-
-```bash
-npm run dev
-```
-
-> **Nota:** A chave da API Anthropic precisa estar configurada no proxy ou variável de ambiente do servidor. Em produção, nunca exponha a chave no frontend.
-
----
-
-## 🖥️ Versão Terminal (Python)
-
-### Pré-requisitos
-
-```bash
-pip install anthropic
-```
-
-### Configuração
-
-```bash
-# Obrigatório
-export ANTHROPIC_API_KEY="sk-ant-..."
-
-# Opcional — para alertas por e-mail reais
-export SMTP_HOST="smtp.gmail.com"
-export SMTP_PORT="587"
-export SMTP_USER="seuemail@gmail.com"
-export SMTP_PASS="sua_senha_de_app"
-```
-
-### Executar
-
-```bash
+pip install -r requirements.txt
+cp .env.example .env          # preencha a ANTHROPIC_API_KEY (e o e-mail, se quiser)
+set -a; . ./.env; set +a      # carrega o .env (Linux/macOS)
 python monitor_preco.py
 ```
 
-### Comandos disponíveis no terminal
-
-| Comando | Descrição |
+| Comando | O que faz |
 |---|---|
-| `/historico` | Ver buscas anteriores |
-| `/favoritos` | Ver produtos favoritos |
-| `/favoritar` | Favoritar último resultado |
-| `/add-alerta` | Criar alerta de preço |
-| `/alertas` | Listar alertas ativos |
-| `/remover-fav <n>` | Remover favorito pelo número |
-| `/sair` | Encerrar o programa |
+| `/historico`, `/favoritos`, `/alertas` | Mostra as listas |
+| `/favoritar` | Guarda o menor preço da última busca |
+| `/add-alerta` | Cria um alerta (produto, loja, preço alvo e e-mail opcional) |
+| `/remover-fav <n>`, `/remover-alerta <n>` | Tira um item da lista |
+| `/nova` | Começa outra conversa |
+| `/ajuda`, `/sair` | Ajuda e sair |
 
----
+Histórico, favoritos e alertas ficam em `~/.garimpo.json` (só você lê: permissão 600). Para o alerta por e-mail,
+preencha `SMTP_*` no `.env` — no Gmail, com uma *senha de app*.
 
-## 📁 Estrutura do Projeto
+## O que mudou nesta versão
 
+- **Voltou a funcionar:** o modelo antigo (`claude-sonnet-4-20250514`) foi desligado pela Anthropic em junho de 2026.
+  Agora usa o `claude-opus-5-5` com a busca na internet atual (`web_search_20260209`), retoma buscas longas
+  (quando a API pausa no meio) e, na versão de terminal, tenta um modelo de reserva se o filtro de segurança recusar
+  por engano. Cada busca é cobrada pela API da Anthropic; para gastar cerca de metade, troque `MODELO` por
+  `claude-sonnet-5-5` no começo dos dois arquivos.
+- **Segurança:**
+  - links que não são `http`/`https` (como `javascript:`) são descartados;
+  - o e-mail do alerta escapa o texto que veio da internet (antes dava para injetar HTML) e confere o certificado do
+    servidor de e-mail (antes a senha podia ser capturada no caminho);
+  - códigos de terminal escondidos em texto de página são tirados;
+  - o assistente é instruído a ignorar ordens escritas dentro das páginas e a não inventar preço ou link;
+  - preço e e-mail digitados são conferidos.
+- **Contas certas:**
+  - o "gráfico de 14 dias" mostrava números sorteados; saiu, e no lugar há barras com os preços reais e as suas buscas
+    anteriores;
+  - o alerta da tela disparava com qualquer produto; agora só com o do alerta;
+  - o terminal não manda o mesmo e-mail duas vezes;
+  - a tela não fica em branco quando a API dá erro: mostra o que fazer.
+- **Guardado:** histórico, favoritos e alertas não somem mais ao fechar.
+- **Visual:**
+  - cores lisas, sem degradê, sombra ou desfoque, nem fontes baixadas de fora;
+  - no celular, o painel abre por cima da conversa e as ofertas cabem na tela;
+  - botões de 44 px, rótulos para leitor de tela, abas com setas e janela que fecha com Esc.
+- **Arquivos que o README prometia e faltavam:** `requirements.txt`, `.env.example` e `.gitignore`.
+  Testes da versão de terminal em `tests/`.
+
+## Testes
+
+```bash
+python -m unittest      # não usam a internet nem a API
 ```
-monitor-preco/
-├── src/
-│   └── MonitorPreco.jsx    # Versão web
-├── monitor_preco.py        # Versão terminal
-├── requirements.txt
-├── .env.example
-├── .gitignore
-└── README.md
-```
 
-## 📋 requirements.txt
+## Arquivos
 
-```
-anthropic>=0.25.0
-```
+`MonitorPreco.jsx` (versão com tela) · `monitor_preco.py` (versão de terminal) · `tests/` · `requirements.txt` ·
+`.env.example` · `icone.svg`
 
-## 🔒 .gitignore
-
-```
-.env
-node_modules/
-dist/
-__pycache__/
-*.pyc
-```
-
----
-
-## 🤖 Como funciona a IA
-
-O chat usa o modelo **Claude** com ferramenta de **busca web em tempo real**:
-
-1. Se o produto for vago → pede mais detalhes (marca, modelo, tamanho, cor)
-2. Com detalhes suficientes → busca em todas as 8 lojas simultaneamente
-3. Retorna preços, parcelamentos, links e frete grátis
-
----
-
-## 📄 Licença
+## Licença
 
 MIT
